@@ -14,8 +14,8 @@
 ### 克隆项目
 
 ```bash
-git clone https://github.com/DcolorWei/CFRS-Demo
-cd CFRS-Demo
+git clone https://github.com/DcolorWei/Tiny-Web
+cd Tiny-Web
 ```
 
 ### 安装依赖
