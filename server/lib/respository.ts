@@ -4,6 +4,7 @@ import path from 'path';
 
 type Constructor<T> = { new(...args: any[]): T };
 
+const DB_PATH = "data"
 
 class Repository<T> {
     public name: string;
@@ -12,10 +13,12 @@ class Repository<T> {
     private isInitialized: boolean = false;
 
     private static instances = new Map<string, any>();
-
+    /**
+     * @param entityClass The class of the entity this repository will manage.
+     */
     private constructor(private entityClass: Constructor<T>) {
         this.name = entityClass.name.toLowerCase().replace("entity", "");
-        this.filePath = path.join('./data', `${this.name}.json`);
+        this.filePath = path.join(`./${DB_PATH}`, `${this.name}.json`);
     }
 
     public static instance<T>(
@@ -33,8 +36,8 @@ class Repository<T> {
         }
 
         try {
-            if (!fs.existsSync('./data')) {
-                fs.mkdirSync('./data');
+            if (!fs.existsSync(`./${DB_PATH}`)) {
+                fs.mkdirSync(`./${DB_PATH}`);
             }
             if (!fs.existsSync(this.filePath)) {
                 fs.writeFileSync(this.filePath, '[]');
@@ -48,6 +51,9 @@ class Repository<T> {
         this.isInitialized = true;
     }
 
+    /**
+     * A private helper to load data from the JSON file into the cache.
+     */
     private loadData(): void {
         try {
             const data = fs.readFileSync(this.filePath).toString();
@@ -58,6 +64,10 @@ class Repository<T> {
         }
     }
 
+    /**
+     * A private helper to save the current cache to the JSON file.
+     * @param data The data array to save. If not provided, it saves the current cache.
+     */
     private saveData(data: T[] = this.cache): void {
         try {
             this.cache = data;
@@ -69,6 +79,11 @@ class Repository<T> {
         }
     }
 
+    /**
+     * Filters the cache based on the provided conditions.
+     * @param where An object containing key-value pairs to match.
+     * @returns A filtered array of entities.
+     */
     private filterData(where?: Partial<T>): T[] {
         if (!where || Object.keys(where).length === 0) {
             return this.cache;
@@ -76,6 +91,7 @@ class Repository<T> {
 
         return this.cache.filter(entity => {
             return Object.entries(where).every(([key, value]) => {
+                // Handle cases where the value in `where` is null or undefined
                 const entityValue = (entity as any)[key];
                 if (value === null || value === undefined) {
                     return entityValue === null || entityValue === undefined;
@@ -85,12 +101,23 @@ class Repository<T> {
         });
     }
 
+    /**
+     * Counts the number of entities that match the optional `where` clause.
+     * @param where An optional object for filtering.
+     * @returns The number of matching entities.
+     */
     async count(where?: Partial<T>): Promise<number> {
         this.initialize();
         return this.filterData(where).length;
     }
 
-    find(where?: Partial<T>, config?: { limit?: number, offset?: number }): T[] {
+    /**
+     * Finds all entities that match the optional `where` clause.
+     * @param where An optional object for filtering.
+     * @param config An optional object for limiting and offsetting results.
+     * @returns An array of matching entities.
+     */
+    async find(where?: Partial<T>, config?: { limit?: number, offset?: number }): Promise<T[]> {
         this.initialize();
         const filteredData = this.filterData(where);
         const start = config?.offset || 0;
@@ -98,12 +125,21 @@ class Repository<T> {
         return filteredData.slice(start, end);
     }
 
+    /**
+     * Finds a single entity that matches the `where` clause.
+     * @param where An object for filtering.
+     * @returns The first matching entity, or undefined.
+     */
     findOne(where: Partial<T>): T | undefined {
         this.initialize();
         return this.filterData(where)[0];
     }
 
-
+    /**
+     * Inserts a new entity. It generates a unique ID for the entity.
+     * @param entity A partial entity object to insert.
+     * @returns True if the insertion was successful.
+     */
     insert(entity: Partial<T>): boolean {
         this.initialize();
         const id = Date.now().toString(36) + Math.random().toString(36).substring(4, 10);
@@ -114,6 +150,11 @@ class Repository<T> {
         return true;
     }
 
+    /**
+     * Inserts more entities into the cache.
+     * @param entities An array of partial entity objects to insert.
+     * @returns True if the insertion was successful.
+     */
     async insertMany(entities: Partial<T>[]): Promise<boolean> {
         this.initialize();
         const create_time = Date.now();
@@ -126,12 +167,20 @@ class Repository<T> {
         return true;
     }
 
+    /**
+     * Updates entities that match the `where` clause with new data.
+     * @param where An object to find the entities to update.
+     * @param updateData An object with the new data to apply.
+     * @returns True if at least one entity was updated.
+     */
     update(where: Partial<T>, updateData: Partial<T>): boolean {
         this.initialize();
         let updatedCount = 0;
         const newCache = this.cache.map(entity => {
+            // Check if the entity matches the `where` clause
             if (Object.entries(where).every(([key, value]) => (entity as any)[key] === value)) {
                 updatedCount++;
+                // Create a new object with the updated properties
                 return { ...entity, ...updateData, update_time: Date.now() };
             }
             return entity;
@@ -143,6 +192,12 @@ class Repository<T> {
         return updatedCount > 0;
     }
 
+    /**
+     * Deletes entities that match the `where` clause.
+     * This is a new method added for completeness.
+     * @param where An object to find the entities to delete.
+     * @returns True if at least one entity was deleted.
+     */
     delete(where: Partial<T>): boolean {
         this.initialize();
         const initialCount = this.cache.length;

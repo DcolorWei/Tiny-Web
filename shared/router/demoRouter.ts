@@ -1,7 +1,7 @@
 import { DemoImpl } from "../impl";
-import { BaseRouterInstance, BaseWebsocketInstance, MethodConstructor } from "../lib/decorator";
+import { BaseRouterInstance, BaseWebsocketInstance, } from "../lib/decorator";
 
-export class DemoRouterInstance implements BaseRouterInstance {
+export class DemoRouterInstance extends BaseRouterInstance {
     base = "/api";
     prefix = "/demo";
     router = [
@@ -17,9 +17,7 @@ export class DemoRouterInstance implements BaseRouterInstance {
 
     constructor(inject: Function, functions?: {
         queryDemo: (query: DemoListQuery) => Promise<DemoListResponse>,
-    }) {
-        inject(this, functions);
-    }
+    }){ super(); inject(this, functions); }
 }
 
 export class DemoWebsocketInstance extends BaseWebsocketInstance {

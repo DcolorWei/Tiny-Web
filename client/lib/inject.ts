@@ -1,32 +1,32 @@
 import { BaseRouterInstance, BaseWebsocketInstance, Route } from "../../shared/lib/decorator";
+import { HttpClientService } from "./webhttp";
 import { WebSocketClientService } from "./websocket";
 
 export function inject(instance: BaseRouterInstance) {
+    const http = HttpClientService.getInstance();
     const { base, prefix, router } = instance;
     router.forEach((route: Route) => {
+        route.handler = null;
         const { name, path, method } = route;
         const url = base + prefix + path;
         if (method === "get") {
-            instance[name] = async (query: string | string[][] | Record<string, string> | URLSearchParams | undefined) => {
-                const final_url = url + "?" + new URLSearchParams(query).toString();
-                return await fetch(final_url, { method: "get" })
-                    .then(r => r.json())
-                    .then(data => data);
+            instance[name] = async (query: URLSearchParams, callback?: Function) => {
+                window.addEventListener(name, (event) => {
+                    const data = (event as CustomEvent)["detail"];
+                    callback && callback(data);
+                })
+                http.get(name, url, query);
             }
         }
-        if (method === "post") {
-            instance[name] = async (body: Record<string, any>) => {
-                return await fetch(url,
-                    {
-                        method: "post",
-                        body: JSON.stringify(body),
-                        headers: { "Content-Type": "application/json" }
-                    })
-                    .then(r => r.json())
-                    .then(data => data);
+        else if (method === "post") {
+            instance[name] = async (body: Record<string, any>, callback?: Function) => {
+                window.addEventListener(name, (event) => {
+                    const data = (event as CustomEvent)["detail"];
+                    callback && callback(data);
+                })
+                http.post(name, url, body);
             }
         }
-        route.handler = null;
     })
 }
 
@@ -35,14 +35,19 @@ export function injectws(instance: BaseWebsocketInstance) {
         throw new Error("There are duplicate method names in the controller.");
     }
     const host = location.host;
+    const auth = localStorage.getItem("token");
+
     const ws = WebSocketClientService.getInstance(`wss://${host}/ws`);
+
     instance.methods.forEach(method => {
         const { name, type } = method;
-        instance[name] = async (payload: string) => {
-            const id = Date.now().toString(36);
-            const message = JSON.stringify({ id, name, payload, type })
+        instance[name] = async (payload: string, callback?: Function) => {
+            window.addEventListener(name, (event) => {
+                const data = (event as CustomEvent)["detail"];
+                callback && callback(data);
+            })
+            const message = JSON.stringify({ name, payload, type, auth })
             ws.sendMessage(message);
-            return id;
         }
     })
 
