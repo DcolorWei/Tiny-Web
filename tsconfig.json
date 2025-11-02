@@ -16,8 +16,9 @@
 
     /* type checking */
     "strict": true,
+    "strictPropertyInitialization": false,
     "noUnusedLocals": true,
     "noUnusedParameters": true
   },
-  "include": ["src"]
+  "include": ["shared"]
 }
