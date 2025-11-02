@@ -1,28 +1,27 @@
 import './App.css';
 
-import { BrowserRouter as Router, Routes, Route, Navigate, useNavigate } from 'react-router-dom';
 import DemoPage from './pages/demo/DemoPage';
-import { useEffect } from 'react';
 
-const Main = () => {
-  const navigate = useNavigate();
-  useEffect(() => {
-    navigate("/demo")
-  }, []);
-  return (
-    <div>
-    </div>
-  );
-}
+import { BrowserRouter as Router, Routes, Route, Navigate, Outlet } from 'react-router-dom';
 
+const PrivateRoute = ({ redirectPath = '/auth' }) => {
+  // 检查 localStorage 中的 token
+  const isAuthenticated = !!localStorage.getItem('token');
+
+  return isAuthenticated ? <Outlet /> : <Navigate to={redirectPath} replace />;
+};
 
 const App = () => {
+  const AuthPage = () => { return (<div></div>) }
   return (
     <Router>
       <Routes>
-        {/* Public routes */}
-        <Route path="/" element={<Main />} />
-        <Route path="/demo" element={<DemoPage />} />
+        <Route path="/auth" element={<AuthPage />} />
+
+        <Route element={<PrivateRoute />}>
+          <Route path="/demo" element={<DemoPage />} />
+        </Route>
+        <Route path="/" element={<Navigate to="/demo" replace />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </Router>
