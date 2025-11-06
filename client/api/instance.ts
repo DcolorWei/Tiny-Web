@@ -1,5 +1,6 @@
-import { DemoRouterInstance, DemoWebsocketInstance } from "../../shared/router/demoRouter";
-import { inject, injectws } from "../lib/inject";
+import { AuthRouterInstance } from "../../shared/router/AuthRouter";
+import { DemoRouterInstance } from "../../shared/router/DemoRouter";
+import { inject } from "../lib/inject";
 
+export const AuthRouter = new AuthRouterInstance(inject);
 export const DemoRouter = new DemoRouterInstance(inject);
-export const DemoWebsocket = new DemoWebsocketInstance(injectws);
