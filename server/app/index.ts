@@ -1,29 +1,47 @@
 import { config } from "dotenv";
 import cors from "cors";
+import path from "path";
+import { fileURLToPath } from "url";
 
 config();
 
+// 中间件-pg
+// 中间件-express
+import http from "http";
 import express from "express";
 import bodyParser from "body-parser";
-import { WebSocketServer } from 'ws';
+import { WebSocketServer } from "ws";
 
+// 中间件-各级路由
 import { mounthttp, mountws } from "../lib/mount";
-import { demoController, demoWSController } from "../controller/demo.controller";
+import { authController } from "../controller/auth.controller";
+import { demoController } from "../controller/demo.controller";
 
+// HTTP
 const app = express();
 app.use(bodyParser.json()).use(cors());
+mounthttp(app, [authController, demoController]);
 
-mounthttp(app, [
-    demoController
-]);
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+const staticPath = path.join(__dirname);
 
-app.listen(process.env.SERVER_HTTP_PORT, async () => {
-    console.log(`App http listening at http://localhost:${process.env.SERVER_HTTP_PORT}`);
+// HTTP-File
+app.use(express.static(staticPath));
+app.use((q, s, n) => (q.path.endsWith(".mjs") ? s.status(403).send("Forbidden") : n()));
+app.get(/.*/, (q, s) => {
+    if (q.path.startsWith("/api")) return s.status(404).json({ error: "API not found" });
+    else if (q.path.startsWith("/favicon.ico")) return s.sendFile(path.join(staticPath, "favicon.ico"));
+    else return s.sendFile(path.join(staticPath, "index.html"));
 });
 
-const wss = new WebSocketServer({ port: Number(process.env.SERVER_WS_PORT), path: '/ws' }, () => {
-    console.log(`App websocket listening at ws://localhost:${process.env.SERVER_WS_PORT}`);
+// 挂载
+const server = http.createServer(app);
+
+// WebSocket
+const wss = new WebSocketServer({ server, path: "/ws" });
+mountws(wss, []);
+
+server.listen(process.env.SERVER_PORT || 3300, () => {
+    console.log(`Server is running at http://localhost:${process.env.SERVER_PORT || 3300}`);
 });
-mountws(wss, [
-    demoWSController
-]);

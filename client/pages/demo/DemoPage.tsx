@@ -1,29 +1,26 @@
 import { Header } from "../../components/header/Header";
 import { useEffect, useState } from "react";
 import { DemoImpl } from "../../../shared/impl";
-import { DemoRouter, DemoWebsocket } from "../../api/instance";
-import { WebSocketClientService } from "../../lib/websocket";
+import { DemoRouter } from "../../api/instance";
+import { Locale } from "../../methods/locale";
 
 const DemoPage = () => {
-    const [DemoList, setAccountList] = useState<Array<DemoImpl>>([]);
+    const [DemoList, setDemoList] = useState<Array<DemoImpl>>([]);
 
     useEffect(() => {
-        DemoWebsocket.queryDemo({ name: "demo" });
-        window.addEventListener('queryDemo', function (event) {
-            const detail: { list: Array<DemoImpl> } = event["detail"];
-            setAccountList(detail.list);
-        });
-    }, [])
+        (async () => {
+            const { success, data } = await DemoRouter.queryDemo({ name: "" });
+            const { list } = data;
+            setDemoList(list);
+        })();
+    }, []);
 
     return (
         <div className="max-w-screen">
-            <Header name="Demo" />
-            <div className="p-4">
-                {JSON.stringify(DemoList)}
-            </div>
-        </div >
-    )
+            <Header name={Locale("Menu").Demo} />
+            <div className="p-4">{JSON.stringify(DemoList)}</div>
+        </div>
+    );
 };
-
 
 export default DemoPage;

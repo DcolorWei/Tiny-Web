@@ -1,16 +1,12 @@
 import { DemoImpl } from "../../shared/impl";
 import { DemoEntity } from "../../shared/types/Demo";
-import Repository from "../lib/respository";
+import Repository from "../lib/repository";
 import { WebSocketServerService } from "../lib/webscoket";
 
 const demoRepository = Repository.instance(DemoEntity);
 
-export async function getDemoList(): Promise<DemoEntity[]> {
-    return demoRepository.find();
-}
-
 export async function getDemoByDemo(): Promise<Array<DemoImpl>> {
-    const demoResult: Array<DemoImpl> = demoRepository.find();
+    const demoResult: Array<DemoImpl> = await demoRepository.find();
     return demoResult;
 }
 

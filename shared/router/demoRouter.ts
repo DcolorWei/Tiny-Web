@@ -1,5 +1,5 @@
 import { DemoImpl } from "../impl";
-import { BaseRouterInstance, BaseWebsocketInstance, } from "../lib/decorator";
+import { BaseRequest, BaseResponse, BaseRouterInstance } from "../lib/decorator";
 
 export class DemoRouterInstance extends BaseRouterInstance {
     base = "/api";
@@ -9,35 +9,29 @@ export class DemoRouterInstance extends BaseRouterInstance {
             name: "queryDemo",
             path: "/list",
             method: "get",
-            handler: Function
+            handler: Function,
         },
-    ]
-
-    queryDemo: (query: DemoListQuery) => Promise<DemoListResponse>
-
-    constructor(inject: Function, functions?: {
-        queryDemo: (query: DemoListQuery) => Promise<DemoListResponse>,
-    }){ super(); inject(this, functions); }
-}
-
-export class DemoWebsocketInstance extends BaseWebsocketInstance {
-    methods = [
-        {
-            name: "queryDemo",
-            type: "continuous",
-            handler: Function
-        }
     ];
-    queryDemo: (query: DemoListQuery) => Promise<string>;
-    constructor(inject: Function, functions?: {
-        queryDemo: (query: DemoListQuery) => Promise<DemoListResponse>,
-    }) { super(); inject(this, functions); }
+
+    queryDemo: (query: DemoListQuery) => Promise<DemoListResponse>;
+
+    constructor(
+        inject: Function,
+        functions?: {
+            queryDemo: (query: DemoListQuery) => Promise<DemoListResponse>;
+        }
+    ) {
+        super();
+        inject(this, functions);
+    }
 }
 
-export interface DemoListQuery {
+export interface DemoListQuery extends BaseRequest {
     name: string;
 }
 
-export interface DemoListResponse {
-    list: DemoImpl[];
+export interface DemoListResponse extends BaseResponse {
+    data: {
+        list: DemoImpl[];
+    };
 }
